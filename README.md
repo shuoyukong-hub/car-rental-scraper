@@ -31,46 +31,106 @@ cd 神州租车/zuche-price-capture && node capture-zuche-prices.js
 
 产出落在各平台的 `captures/`(神州是 `output/`),CSV + 原始 JSON 各一份。
 
-## 登录态
+> **第一次用?先看下一节** —— 哈啰/滴滴/神州都需要先准备一次登录态,携程不用。
 
-四个平台对登录的要求**完全不同**,这是最容易踩的坑:
+## 首次使用:怎么准备登录态
 
-### 携程 —— 什么都不需要
+四个平台对登录的要求**完全不同**,这是最容易踩的坑。**先看你需要做多少事**:
 
-它从微信 Session Storage 抠出来的 `baseRequest` **不是登录态**,而是客户端配置(渠道号、版本、一百多项 AB 开关),里面没有 token、没有 cookie、没有 uid。`queryProducts` 是公开搜索接口。
+| 平台 | 你要做什么 | 大约耗时 |
+|---|---|---|
+| **携程** | **什么都不用做** —— 拿到代码直接跑 | 0 |
+| **哈啰** | 用 WMPFDebugger 抓一次 token | ~10 分钟 |
+| **滴滴** | 在微信里**打开一次**滴滴租车小程序 | ~1 分钟 |
+| **神州** | 在弹出的浏览器里**登录一次** | ~2 分钟 |
 
-**证据**:2026-09-14 用 7 月 21 日的 `baseRequest` 照样跑通,产出 179 条。所以携程**随时能跑,不看登录脸色**。
+### 携程 —— 不用做任何事 ✅
 
-### 哈啰 —— 需要 token,但能活很久
+它从微信 Session Storage 抠出来的 `baseRequest` **不是登录态**,而是**客户端配置**(渠道号、版本、一百多项 AB 开关),里面没有 token、没有 cookie、没有 uid。`queryProducts` 是公开搜索接口。
 
-车列表接口是 `withToken:!0`,假 token 返回 `code:103`。token 从 CDP 抓真实请求拿到,存在 `session.json`。
+而且仓库里**自带一份 `携程租车/ctrip_base_request.json`**,没装微信的机器会自动用它 —— **实测在一台只有 Node 的机器上直接跑通,产出 178 条**。
 
-**实测 token 活了 2 个月**(7/17 的会话用到 9/14 仍有效)→ **过期不是必然,先试跑再决定要不要重抓**。
+所以携程不用准备任何东西:
 
-重抓流程见 `SKILL.md` 的「哈啰 token 失效后重抓」。
+```bash
+cd 携程租车 && node ctrip_miniapp_query.js --city 43
+```
 
-### 滴滴 —— 需要登录票据
+### 哈啰 —— 需要用 WMPFDebugger 抓一次 token
 
-从微信 Local Storage 的 LevelDB 里读 `didih5_trinity_login_ticket` / `securityParams`。注意微信正占着这个 DB,脚本会**先拷快照到临时目录再读**。
+车列表接口是 `withToken:!0`,假 token 返回 `code:103`。token 存在 `session.json`,**仓库里没有**(含凭据,被 gitignore)。
 
-### ★ 神州 —— 第一次搜索必须登录
+**前提**:Linux 上装了**微信 PC 版**并已登录。
 
-神州没有可直接直调的取数接口,走的是「真实浏览器 + 监听 `/resource/carrctapi/order/chooseCar/v1`」:
+```bash
+# ① 微信里打开「哈啰租车」小程序,随便搜一次车型
+#    (目的是让小程序发一次真实请求,不搜就抓不到)
 
-1. 登录态存在 `神州租车/zuche-price-capture/.chrome-profile/`
-2. **该目录第一次用是空的 → 必须在弹出的 Chrome 里登录一次**,之后自动复用
-3. 登录失效时,接口 `getUserInfo/v1` 会返回 `用户不存在`,页面跳 `/#/rlogin`
-4. 失效后**只能人工重新登录**,没有绕过的办法
+# ② 起 WMPFDebugger(frida 注入需 root;node 若不在 PATH,用绝对路径)
+cd <WMPFDebugger 目录>
+sudo "$(command -v node)" node_modules/ts-node/dist/bin.js src/index.ts --debug-main
 
-**依赖**:puppeteer 本机已有(v25.3.0,在 mermaid-cli 的 node_modules 里,脚本的备选路径正好命中),不用装。真缺了就 `npm install puppeteer`。
+# ③ 另开一个终端抓包 —— 会自动生成/覆盖 session.json
+cd <本仓库>/哈啰租车/hello-miniapp-query
+node cdp_capture.js
+```
 
-**实测有效流程**(2026-09-14):跑脚本 → 弹窗里登录 → 选城市/取车地址/时间 → 点「去订车」→ `chooseCar` 自动落盘 CSV。
+> WMPFDebugger 是**外部项目,不在本仓库**,需要自行获取。
 
-两个待改进点:
+**之后不用反复抓** —— 实测 token 活了 **2 个月**(7/17 的会话用到 9/14 仍有效)。
+脚本报 `code:103` 才需要重抓,**先试跑再说**。
 
-1. **实际接口是 `chooseCar/v3`**,而脚本常量 `TARGET_API` 写的是 `/chooseCar/v1`(过时了)。因为监听用的是 `url.includes("chooseCar")` 才没出问题,但改协议时别被那个常量误导。
-2. **请求体极简**(只有 8 个字段,见 `SKILL.md`),意味着**有有效 Cookie 就完全可以直调**,能省掉浏览器这一步。
-3. 目前只提取了 `dailyPrice` 一个字段(CSV 的 `field` 列全是它),总价/门店没抓 —— 要更全的话得扩 `PRICE_KEYS` 和提取逻辑。
+**【另一条路】别人给你 `session.json`**:直接放进 `哈啰租车/hello-miniapp-query/` 就能跑 ——
+脚本只读这个文件,**完全不碰本机微信**,换台机器也认。也可用 `--session <路径>` 指向别处。
+
+> ⚠️ `session.json` 含登录 token,给别人等于借出你的哈啰登录态。
+
+### 滴滴 —— 微信里打开一次小程序就行
+
+登录票据从微信 Local Storage 读,脚本自己会去取,**不需要抓包、不需要额外工具**。
+
+**前提**:Linux 上装了**微信 PC 版**并已登录。
+
+1. 微信里打开「**滴滴租车**」小程序
+2. 随便搜一次车型(选个城市和日期,让它把登录票据写进本地存储)
+3. 之后直接跑脚本:
+
+```bash
+cd 滴滴租车 && npm install        # 首次要装依赖
+node didi_miniapp_query.js --city 广州
+```
+
+> ⚠️ **它不能跨机器用** —— 只认本机微信的数据目录,没有从外部导入登录态的入口。
+> 换台机器就在那台机器上重装微信、再开一次小程序。
+
+脚本会先**拷一份 LevelDB 快照到临时目录再读**,不碰微信的原文件。
+
+### 神州 —— 在弹出的浏览器里登录一次
+
+神州没有可直接直调的取数接口,走的是「真实浏览器 + 监听接口」。登录态存在
+`神州租车/zuche-price-capture/.chrome-profile/`,**该目录第一次用是空的**。
+
+```bash
+cd 神州租车/zuche-price-capture && node capture-zuche-prices.js
+```
+
+跑起来会弹出一个手机尺寸的 Chrome:
+
+1. **在窗口里完成登录**(手机号 + 验证码/密码)
+2. 选**城市 / 取车地址 / 时间**
+3. 点「**去订车**」进车型列表
+4. `chooseCar` 随即被监听到,自动存成 `output/chooseCar-prices-*.csv`
+
+**之后不用重复登录** —— `.chrome-profile/` 有内容了就自动复用。
+
+**怎么知道登录失效了**:页面跳到 `/#/rlogin`,或接口 `getUserInfo/v1` 返回「用户不存在」。
+失效后**只能人工重登一次**,没有绕过的办法。
+
+**依赖**:puppeteer 会在几处常见位置自动找,找不到就 `npm install puppeteer`,或用 `PUPPETEER_MODULE` 指定。
+需要**有头浏览器环境**(会弹窗,要有 `DISPLAY`)。
+
+**已知待改进**:实际接口是 `chooseCar/v3`,脚本常量 `TARGET_API` 写的是 `/chooseCar/v1`(过时了,靠 `url.includes("chooseCar")` 才没出错);
+目前只提取了 `dailyPrice` 一个字段,总价/门店没抓。
 
 ## 目录结构
 
