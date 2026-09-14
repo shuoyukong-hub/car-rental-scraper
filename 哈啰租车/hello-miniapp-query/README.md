@@ -72,7 +72,7 @@ data.totalVehicleNum          车型组总数(分页用)
 2. **`totalVehicleNum` 是「车型组数」不是「报价行数」**
    → 一个车型组可能带多个商家 child,**分页终止不能用「报价行数 >= total」比**,
    要用「已收**车型组**数」。用错会第一页就误判收完,数据静默截断。
-3. **价格有三套,别用错**:`cSideDailyPrice`/`cSideTotalPrice` = C 端价(用户实付,**比价用这个**);
+3. **价格有三套,别用错**:`cSideDailyPrice`/`cSideTotalPrice` = C 端价(用户实付,**取数用这个**);
    `bSide*` = B 端结算价;`vehicleDisplayInfo.vehiclePrice.*` + `dailyLowestPrice`/`lowestTotalPrice` = 展示价。
    多数情况展示价 = C 端价,但见过 `c=57 / b=48` 的平台加价情形。
 

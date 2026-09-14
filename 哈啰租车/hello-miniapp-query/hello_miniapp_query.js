@@ -23,7 +23,7 @@
  *   所以取价一律走 childVehicleList,为空才回退外层,避免重复行。
  *
  * 价格三套: cSide*=C端价(用户实付) / bSide*=B端结算价 / vehiclePrice.*=展示价。
- * 比价用 cSide(展示价多数情况等同,但出现过 c=57 / b=48 的平台加价情形)。
+ * 取数用 cSide(展示价多数情况等同,但出现过 c=57 / b=48 的平台加价情形)。
  *
  * 用法:
  *   node hello_miniapp_query.js --city 027 --pickup "2026-09-12 10:00:00" --return "2026-09-14 10:00:00"
