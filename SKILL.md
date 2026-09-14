@@ -1,7 +1,7 @@
 ---
 name: car-rental-scraper
 description: 租车比价数据抓取——携程/哈啰/滴滴/神州四平台车型与价格获取。涉及租车爬虫、租车比价、车型价格、携程租车/哈啰租车/滴滴租车/神州租车取数时使用。
-version: 1.0.0
+version: 1.1.0
 metadata:
   hermes:
     tags: [car-rental, ctrip, hellobike, didi, zuche, 租车, 比价, 爬虫]
@@ -9,147 +9,106 @@ metadata:
 
 # 租车比价爬虫
 
-从携程、哈啰、滴滴、神州四个平台抓车型与价格,做比价。
+从携程、哈啰、滴滴、神州四个平台抓车型与价格。
 
-## 路由表(先看这个)
+## When to Use
 
-| 平台 | 脚本 | 「城市」怎么传 | 登录态 | 状态 |
+**该用**:要跑这四个平台取数;脚本报错要排查;要新增平台或改协议。
+
+**不该用**:只想随便看个价(直接上官网更快);平台不在这四个里;要下单改单——**这个 skill 只读不写**。
+
+## 前置条件(先读这节)
+
+| 项 | 要求 |
+|---|---|
+| 操作系统 | **Linux 桌面**。依赖微信 PC Linux 版的数据目录与有头浏览器 |
+| Node | **≥ 18**(脚本用全局 `fetch`、`crypto.randomUUID`) |
+| 微信 | 装了**微信 PC Linux 版**并登录,且开过对应小程序 |
+| 网络 | 需能访问四个国内网关(境外 IP 可能触发风控) |
+
+| 平台 | 除上面外还要准备什么 | 需要人工介入吗 |
+|---|---|---|
+| 携程 | 无(仓库内有兜底配置 `携程租车/ctrip_base_request.json`) | ❌ 全自动 |
+| 哈啰 | 一个外部的 **WMPFDebugger** 项目 + root 权限,抓一次 token | ⚠️ 仅 token 过期时 |
+| 滴滴 | 微信里**开过滴滴租车小程序**(登录票据从那儿读) | ❌ 票据有效时全自动 |
+| 神州 | 一个能跑起来的有头浏览器 | ✅ **首次必须人工登录**,之后复用 |
+
+**四个平台里只有携程换台机器就能直接跑** —— 另外三个都依赖你自己机器上的微信登录态。
+
+## 路由表
+
+| 平台 | 脚本(相对本仓库根) | 城市参数 | 登录态 | 状态 |
 |---|---|---|---|---|
-| **携程** | `携程租车/ctrip_miniapp_query.js` | `--city 43`(**携程 cityId**,三亚=43) | ❌ 不需要 | ✅ 已验证 |
-| **哈啰** | `哈啰租车/hello-miniapp-query/hello_miniapp_query.js` | `--city 027`(**电话区号**,武汉=027) | ✅ 需要 token | ✅ 已验证 |
-| **滴滴** | `滴滴租车/didi_miniapp_query.js` | `--city 广州`(**中文城市名**,查内置表) | ✅ 需要登录票据 | ✅ 已验证 |
-| **神州** | `神州租车/zuche-price-capture/capture-zuche-prices.js` | **页面里手选** | ✅ 需要 Cookie,且**首次必须登录** | ✅ 已验证(半自动) |
+| **携程** | `携程租车/ctrip_miniapp_query.js` | `--city 43`(携程 cityId) | ❌ 不需要 | ✅ 已验证 |
+| **哈啰** | `哈啰租车/hello-miniapp-query/hello_miniapp_query.js` | `--city 027`(电话区号) | ✅ 需要 token | ✅ 已验证 |
+| **滴滴** | `滴滴租车/didi_miniapp_query.js` | `--city 广州`(中文城市名) | ✅ 需要登录票据 | ✅ 已验证 |
+| **神州** | `神州租车/zuche-price-capture/capture-zuche-prices.js` | 页面里手选 | ✅ Cookie,**首次要登录** | ✅ 已验证(半自动) |
 
-**四个平台的「城市」语义完全不同**,别混用:携程是自家 cityId、哈啰是电话区号、滴滴是中文城市名、神州只能在页面里选。
+**「城市」四个平台语义完全不同,别混用。**
 
-## 登录态(最容易踩的坑)
+## 默认参数(不传参数会查到哪里)
 
-| 平台 | 要什么 | 怎么拿 | 失效表现 |
-|---|---|---|---|
-| 携程 | **什么都不用** | — | — |
-| 哈啰 | 微信登录态 `token` | CDP 抓真实请求 | `code:103 登录信息已失效` |
-| 滴滴 | 微信登录票据 | 从微信 Local Storage 读 | `errno:1005 登录信息错误` |
-| 神州 | 浏览器 Cookie | **首次搜索时人工登录一次** | `getUserInfo` 返回「用户不存在」 |
+| 平台 | 默认城市 | 默认取还时间 |
+|---|---|---|
+| 携程 | `43` = 三亚 | 距今 1 天 10:00 → 距今 3 天 10:00 |
+| 哈啰 | `027` = 武汉 | 距今 1 天 10:00 → 距今 3 天 10:00 |
+| 滴滴 | 无 → 退回**广州** | 距今 1 天 17:00 → 距今 3 天 17:00 |
+| 神州 | 页面里选(默认北京) | 页面里选 |
 
-### ★ 神州:第一次搜索必须登录
+**价格强依赖时间和租期,不问清楚就默认「明天→后天」是错的。**
 
-神州没有可直接调用的取数接口,走的是「真实浏览器 + 监听接口」:
+## 城市参数怎么填
 
-- 登录态存在 `神州租车/zuche-price-capture/.chrome-profile/`
-- **该目录第一次用是空的 → 必须在弹出的 Chrome 里登录一次**,登录态才会写进去,后续运行自动复用
-- 登录失效时页面会跳到 `/#/rlogin`,接口 `getUserInfo` 会返回 `用户不存在`
-- 失效后**只能重新登录**(我无法代做),重登一次又能用很久
+| 平台 | 规则 | 怎么拿全量 |
+|---|---|---|
+| 携程 | 携程自家 cityId(三亚=`43`) | 接口 `13609/getAreaList`,body `{"cid":<cityId>}` |
+| 哈啰 | **电话区号**(武汉=`027`) | 接口 `timeshare.open.city.list` 返回 `openCityCodes`,**别靠猜** |
+| 滴滴 | **中文城市名**,查脚本里的 `CITIES` 常量 | 该表**只有 10 城**(广州/北京/上海/深圳/成都/杭州/武汉/西安/重庆/南京);加城市要改常量 |
+| 神州 | 页面里手选 | — |
 
-**注意:实际接口是 `chooseCar/v3`,不是脚本常量里的 `v1`** —— 监听是按 `url.includes("chooseCar")` 匹配的,所以 v3 也能抓到,但那个常量是过时的,改协议时别被它误导。
-
-**它的请求体很简单**(实测只有 8 个字段),也就是说**拿到有效 Cookie 后完全可以直调**,不必依赖 puppeteer:
-
-```
-{"pickupCityId":"1","pickupTime":"2026-09-14 13:30","returnCityId":"1",
- "returnTime":"2026-09-16 13:30","entrance":1,
- "userChooseLat":"39.514295","userChooseLon":"116.414348","holidaysWaitingFlag":0}
-```
-
-`pickupCityId` 就是城市(北京=1,可由 `cityLocation/v1` 用坐标换出来)。**想省掉浏览器这一步就从这儿下手。**
-
-### 哈啰 token 失效后重抓
-
-```bash
-# 1. 起 WMPFDebugger(frida 注入需 root;node 在 ~/.local/bin,sudo 下不在 PATH,必须绝对路径)
-cd ~/桌面/WMPFDebugger
-sudo "$(command -v node)" node_modules/ts-node/dist/bin.js src/index.ts --debug-main
-
-# 2. 另开终端抓包(会自动落盘并覆盖 session.json)
-cd ~/桌面/租车网站爬虫/哈啰租车/hello-miniapp-query
-node cdp_capture.js
-```
-
-哈啰 token 实测**能活 2 个月**,所以**先试跑,别一上来就重抓**。
+哈啰的区号是带前导 0 的字符串;三亚这类四位区号**没实测过,建议用上面那个接口查**。
 
 ## 运行
 
 ```bash
-# 携程(三亚)
-cd ~/桌面/租车网站爬虫/携程租车
-node ctrip_miniapp_query.js --city 43
+# 携程(不需要登录,随时可跑)
+cd 携程租车 && node ctrip_miniapp_query.js --city 43
 
-# 哈啰(武汉 = 区号 027)
-cd ~/桌面/租车网站爬虫/哈啰租车/hello-miniapp-query
-node hello_miniapp_query.js --city 027
+# 哈啰
+cd 哈啰租车/hello-miniapp-query && node hello_miniapp_query.js --city 027
 
-# 滴滴(中文城市名;全量约 56 页 / 38s)
-cd ~/桌面/租车网站爬虫/滴滴租车
-node didi_miniapp_query.js --city 广州
+# 滴滴(先装依赖)
+cd 滴滴租车 && npm install && node didi_miniapp_query.js --city 广州
 
-# 神州(会弹出 Chrome,登录 + 选好取车地址,chooseCar 自动落 CSV)
-cd ~/桌面/租车网站爬虫/神州租车/zuche-price-capture
-node capture-zuche-prices.js
+# 神州(会弹出 Chrome,首次要人工登录 + 选地点)
+cd 神州租车/zuche-price-capture && node capture-zuche-prices.js
 ```
 
-产出都在各平台目录的 `captures/`(神州在 `output/`)下,CSV + 原始 JSON 各一份。
+产出:`captures/` 下的 CSV + 原始 JSON(神州在 `output/`)。
 
 ## 常见报错 → 处置
 
 | 现象 | 原因 | 怎么办 |
 |---|---|---|
-| 哈啰 `code:103` | token 过期 | 走上面的 CDP 重抓 |
-| 滴滴 `errno:1004 参数错误` | **`preload/v2` 带了 `times_card_id`** | 见下方「滴滴的坑」,该字段已删 |
-| 滴滴 `errno:1005` | 登录票据失效 | 在微信里重新打开滴滴租车小程序 |
+| 携程说找不到 baseRequest | 没开过小程序且兜底文件缺失 | 微信里开一次携程租车小程序 |
+| 哈啰 `code:103` | token 过期 | 用 WMPFDebugger 重抓,见 `哈啰租车/hello-miniapp-query/README.md` |
+| 滴滴 `errno:1005` | 登录票据失效 | 微信里重新打开滴滴租车小程序 |
+| 滴滴 `errno:1004` | 请求带了不该带的字段 | 见 `滴滴租车/README.md` 的「五个坑」 |
 | 神州 `用户不存在` / 跳 `/#/rlogin` | Cookie 失效 | **在弹出窗口里重新登录** |
-| 神州报找不到 puppeteer | 依赖缺失 | 见下 |
+| 神州找不到 puppeteer | 依赖缺失 | `npm install puppeteer`,或设 `PUPPETEER_MODULE` |
+| 报 `fetch is not defined` | Node < 18 | 升级 Node |
 
-### 滴滴的坑(改过的地方,别改回去)
-
-- **`preload/v2` 绝对不能带 `times_card_id`** —— 带 `false` 服务端直接回 `1004 参数错误`。这是逐个字段隔离出来的,`list/v2` 不受影响。
-- **日租取 `total_charge.rental_amount`(分)/ 天数**,不是 `daily_deduction_amount` —— 后者是「每日立减」,量级差一个数量级。
-- **响应里同一报价会重复返**,实测约 20% 虚高,已按整行去重(去重前后数量都会打印)。
-- **翻页:`page_size` 服务端固定 10**,没有 has_more,靠「不满一页」终止。
-
-### 神州依赖
-
-puppeteer 本机已有(v25.3.0,在 mermaid-cli 的 `node_modules` 里,脚本会自动按 `~/.local/lib/node_modules/...` 找到),**不用装**。
-
-脚本不写死路径,可用环境变量覆盖:
+## 环境变量(脚本不写死路径)
 
 | 变量 | 作用 |
 |---|---|
-| `PUPPETEER_MODULE` | 指定 puppeteer 模块路径 |
-| `CHROME_PATH` | 指定 Chrome 可执行文件(默认自动探测 `/usr/bin/google-chrome` 等) |
-| `WMPFDEBUGGER_DIR` | 指定 WMPFDebugger 目录(哈啰抓包借它的 `ws`) |
-| `CLASSIC_LEVEL_MODULE` | 指定 `classic-level` 模块路径(滴滴读 LevelDB 用) |
-
-## 依赖与安装
-
-| 平台 | 依赖 | 怎么装 |
-|---|---|---|
-| 携程 | 无(node 内置 fetch) | — |
-| 哈啰 | `ws`(抓包时借 WMPFDebugger 的) | WMPFDebugger 里已有 |
-| 滴滴 | `classic-level` | `cd 滴滴租车 && npm install` |
-| 神州 | `puppeteer` | 本机已有(v25.3.0),缺了 `npm install puppeteer` |
-
-## 通用工具
-
-`scripts/` 里三个跨平台通用的小程序逆向工具,以后要**新增平台**会用到:
-
-| 文件 | 作用 |
-|---|---|
-| `scripts/capture_miniapp.sh` | mitmproxy 抓小程序流量 |
-| `scripts/extract_apis.py` | 从流量里抽 API 清单 |
-| `scripts/unpack_wxapkg.py` | 解包 `.wxapkg` 小程序包 |
-
-## 各平台协议速查
-
-| | 携程 | 哈啰 | 滴滴 | 神州 |
-|---|---|---|---|---|
-| 网关 | `m.ctrip.com/restapi/soa2` | `a.hellobike.com/rent/api/` | `tyche.xiaojukeji.com/car/rental/guide/store` | `m.zuche.com/api/gw.do` |
-| 形式 | REST 路径 | `?{action}` 拼 query | REST 路径 | `?uri=<接口>` |
-| 步数 | 1 步 | 1 步 | **2 步**(preload→list) | 页面驱动 |
-| 城市/坐标 | cityId | 电话区号 | 中文名→内置表(坐标定城市) | 页面选 |
-
-四个平台的响应结构、字段映射、踩坑细节都在各自 README 里。
+| `WMPFDEBUGGER_DIR` | WMPFDebugger 目录(哈啰抓包借它的 `ws`) |
+| `PUPPETEER_MODULE` | puppeteer 模块路径 |
+| `CHROME_PATH` | Chrome 可执行文件 |
+| `CLASSIC_LEVEL_MODULE` | `classic-level` 模块路径(滴滴读 LevelDB 用) |
 
 ## 维护指引
 
-- 改协议先看对应平台目录的 `README.md`,那里有实测结论
-- 四平台都**会变**,脚本里凡是标 `★` 的注释都是踩过的坑,别当废话删
-- 状态别乱标:没实跑过的写「未验证」,跑通的写「已验证」——**假状态比没状态更害人**
+- **协议细节、字段映射、踩过的坑都在各平台目录的 `README.md` 里**,改协议先看那儿
+- 脚本里凡是标 `★` 的注释都是踩坑记录,**别当废话删**
+- 状态别乱标:没实跑过的写「未验证」——**假状态比没状态更害人**

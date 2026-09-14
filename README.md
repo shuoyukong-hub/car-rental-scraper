@@ -76,21 +76,24 @@ cd 神州租车/zuche-price-capture && node capture-zuche-prices.js
 
 ```
 租车网站爬虫/
-├── SKILL.md                  skill 入口(路由表 / 报错处置 / 依赖)
+├── SKILL.md                  skill 入口(前置条件 / 路由表 / 默认参数 / 报错处置)
 ├── README.md                 本文件
+├── LICENSE                   MIT
 ├── .gitignore                忽略 依赖 / 登录态 / 缓存
 ├── scripts/                  跨平台通用的小程序逆向工具
 │                              capture_miniapp.sh / extract_apis.py / unpack_wxapkg.py
-├── 携程租车/                  ctrip_miniapp_query.js + captures/
+├── 携程租车/                  ctrip_miniapp_query.js + README.md + captures/
 ├── 哈啰租车/
-│   ├── hello-miniapp-query/  正式脚本 + session.json + cdp_capture.js + captures/
+│   ├── hello-miniapp-query/  正式脚本 + README.md + cdp_capture.js + captures/
 │   └── 小程序源码包/          4 个 .wxapkg(全部哈啰逆向结论的唯一本地来源)
-├── 滴滴租车/                  didi_miniapp_query.js + package.json + captures/
+├── 滴滴租车/                  didi_miniapp_query.js + README.md + package.json + captures/
 └── 神州租车/
-    ├── zuche-price-capture/  capture-zuche-prices.js + .chrome-profile/ + output/
+    ├── zuche-price-capture/  脚本 + README.md + .chrome-profile/ + output/
     ├── zuche_js/             神州前端 JS(逆向 chooseCar 接口的依据)
     └── zuche_scroll_*.json   早期滚屏采集到的 77 车数据(北京大兴机场)
 ```
+
+**每个平台目录都有自己的 `README.md`**,协议细节、字段映射、踩过的坑都在那儿 —— `SKILL.md` 只做路由和前置条件。
 
 **脚本里不写死绝对路径**。所有外部依赖都可用环境变量覆盖:`PUPPETEER_MODULE` / `CHROME_PATH` / `WMPFDEBUGGER_DIR` / `CLASSIC_LEVEL_MODULE`,详见 `SKILL.md`。
 

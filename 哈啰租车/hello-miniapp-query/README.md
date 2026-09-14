@@ -79,7 +79,7 @@ data.totalVehicleNum          车型组总数(分页用)
 ## 运行
 
 ```bash
-cd ~/桌面/租车网站爬虫/哈啰租车/hello-miniapp-query
+cd <本目录>
 
 # 默认走武汉汉南机场 027,取车=明天10点 还车=后天10点
 node hello_miniapp_query.js --city 027
@@ -94,13 +94,17 @@ node hello_miniapp_query.js --city 027 --pickup "2026-09-15 10:00:00" --return 1
 
 前提:WMPFDebugger 已注入成功,且已在微信里打开哈啰租车小程序并触发过一次车型查询。
 
+> **WMPFDebugger 是外部项目,不在本仓库内**,需要自行获取。
+> 抓包脚本借它自带的 `ws` 模块,路径靠 `WMPFDEBUGGER_DIR` 环境变量指定。
+> 另外**必须在微信里手动打开哈啰租车小程序并搜一次车型**,否则抓不到请求。
+
 ```bash
 # 1. 起 WMPFDebugger(frida 注入需 root;node 在 ~/.local/bin,sudo 下不在 PATH,必须绝对路径)
-cd ~/桌面/WMPFDebugger
+cd <WMPFDebugger 目录>
 sudo "$(command -v node)" node_modules/ts-node/dist/bin.js src/index.ts --debug-main
 
 # 2. 另开一个终端跑抓包(会自动覆盖 session.json)
-cd ~/桌面/租车网站爬虫/哈啰租车/hello-miniapp-query
+cd <本目录>
 node cdp_capture.js
 ```
 
