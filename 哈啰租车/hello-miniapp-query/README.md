@@ -90,6 +90,27 @@ node hello_miniapp_query.js --city 027 --pickup "2026-09-15 10:00:00" --return 1
 
 产出 `captures/hello-<city>-<时间戳>.csv` 与 `.json`。
 
+### ⚠️ 换城市:光给 `--city` 不生效
+
+脚本里 `cityCode` 是变量,但**经纬度、`poiId`、地址全写死了武汉**,服务端按坐标出结果。实测:
+
+| 跑法 | 车型组总数 | 车商 |
+|---|---|---|
+| `--city 0899`(坐标仍是武汉) | 25 | 众鑫诚、中远 ← **还是武汉那批** |
+| `--city 0899 --lng 109.4123 --lat 18.3029 --poi-id ... --location ...` | **198** | 盛世租车、畅达出行 ← **完全不同** |
+
+换城市要一起给:**`--city <区号> --lng <经度> --lat <纬度> --poi-id <点> --location <名称>`**。
+
+**区号全量**(实测可用):
+
+```
+POST https://a.hellobike.com/rent/api/?timeshare.open.city.list
+body 带 session.json 里的 common + account → 返回 code:0 与 48 个 openCityCodes
+```
+
+返的是码不是城市名(含义按电话区号常识判断,如 027 武汉 / 0899 三亚)。
+**换城市后核对车商是否合理** —— 数据里没有门店地址字段,只能靠车商判断。
+
 ## token 过期后怎么重抓
 
 前提:WMPFDebugger 已注入成功,且已在微信里打开哈啰租车小程序并触发过一次车型查询。
