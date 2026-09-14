@@ -1,0 +1,13 @@
+{
+  "name": "didi-rental-query",
+  "private": true,
+  "version": "1.0.0",
+  "description": "滴滴租车直调查询:从微信 Local Storage 读登录票据,两步接口取报价",
+  "main": "didi_miniapp_query.js",
+  "scripts": {
+    "query": "node didi_miniapp_query.js"
+  },
+  "dependencies": {
+    "classic-level": "^3.0.0"
+  }
+}

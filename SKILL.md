@@ -116,6 +116,26 @@ puppeteer 本机已有(v25.3.0,在 mermaid-cli 的 `node_modules` 里,脚本会�
 | `PUPPETEER_MODULE` | 指定 puppeteer 模块路径 |
 | `CHROME_PATH` | 指定 Chrome 可执行文件(默认自动探测 `/usr/bin/google-chrome` 等) |
 | `WMPFDEBUGGER_DIR` | 指定 WMPFDebugger 目录(哈啰抓包借它的 `ws`) |
+| `CLASSIC_LEVEL_MODULE` | 指定 `classic-level` 模块路径(滴滴读 LevelDB 用) |
+
+## 依赖与安装
+
+| 平台 | 依赖 | 怎么装 |
+|---|---|---|
+| 携程 | 无(node 内置 fetch) | — |
+| 哈啰 | `ws`(抓包时借 WMPFDebugger 的) | WMPFDebugger 里已有 |
+| 滴滴 | `classic-level` | `cd 滴滴租车 && npm install` |
+| 神州 | `puppeteer` | 本机已有(v25.3.0),缺了 `npm install puppeteer` |
+
+## 通用工具
+
+`scripts/` 里三个跨平台通用的小程序逆向工具,以后要**新增平台**会用到:
+
+| 文件 | 作用 |
+|---|---|
+| `scripts/capture_miniapp.sh` | mitmproxy 抓小程序流量 |
+| `scripts/extract_apis.py` | 从流量里抽 API 清单 |
+| `scripts/unpack_wxapkg.py` | 解包 `.wxapkg` 小程序包 |
 
 ## 各平台协议速查
 
