@@ -90,6 +90,10 @@ node hello_miniapp_query.js --city 027 --pickup "2026-09-15 10:00:00" --return 1
 
 产出 `captures/hello-<city>-<时间戳>.csv` 与 `.json`。
 
+> **`session.json` 不在仓库里**(被 `.gitignore` 排除,因为它含登录 token)。
+> 要跨机器用,把一份有效的 `session.json` 放到本目录即可 —— 脚本只读它,
+> **不依赖本机微信**。另可用 `--session <路径>` 指定别的文件。
+
 ### ⚠️ 换城市:光给 `--city` 不生效
 
 脚本里 `cityCode` 是变量,但**经纬度、`poiId`、地址全写死了武汉**,服务端按坐标出结果。实测:

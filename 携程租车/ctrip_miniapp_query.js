@@ -41,11 +41,19 @@ function defaultDate(daysFromNow) {
 }
 
 function loadCachedBaseRequest() {
-  const files = fs
-    .readdirSync(SESSION_DIR)
-    .map((name) => path.join(SESSION_DIR, name))
-    .filter((file) => fs.statSync(file).isFile())
-    .sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
+  // 优先从微信 Session Storage 抠(本机装了微信、且开过携程租车小程序时才走得到)。
+  // ★ 目录不存在是正常情况(没装微信的新机器),不能让它抛出去 ——
+  //   以前这里直接 readdirSync,新机器上会 ENOENT 崩掉,连下面的兜底文件都到不了。
+  let files = [];
+  try {
+    files = fs
+      .readdirSync(SESSION_DIR)
+      .map((name) => path.join(SESSION_DIR, name))
+      .filter((file) => fs.statSync(file).isFile())
+      .sort((a, b) => fs.statSync(b).mtimeMs - fs.statSync(a).mtimeMs);
+  } catch (_) {
+    // 没装微信 / 没开过小程序 —— 走兜底
+  }
 
   for (const file of files) {
     const parts = fs.readFileSync(file).toString("latin1").split(/[^\x20-\x7e]+/);
@@ -54,15 +62,19 @@ function loadCachedBaseRequest() {
       if (!part.includes(marker)) continue;
       try {
         const cached = JSON.parse(decodeURIComponent(part.slice(part.indexOf("%7B"))));
-        if (cached.baseRequest) return cached.baseRequest;
+        if (cached.baseRequest) {
+          console.log("[session] 用微信 Session Storage 里的 baseRequest");
+          return cached.baseRequest;
+        }
       } catch (_) {
         // A partially written LevelDB record may be truncated; try the next one.
       }
     }
   }
-  return JSON.parse(
-    fs.readFileSync(path.join(__dirname, "ctrip_base_request.json"), "utf8")
-  );
+
+  const fallback = path.join(__dirname, "ctrip_base_request.json");
+  console.log(`[session] 微信里没找到,改用仓库自带配置 ${fallback}`);
+  return JSON.parse(fs.readFileSync(fallback, "utf8"));
 }
 
 async function post(service, body) {

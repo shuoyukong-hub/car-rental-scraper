@@ -76,6 +76,16 @@ function parseStoredValue(buffer) {
 }
 
 async function loadWechatSession(leveldbDir) {
+  // ★ 目录不存在是常见情况(没装微信的新机器),要给能读懂的错误,
+  //   不能把 fs 的 ENOENT 直接抛出去 —— 那个报错看不出该干嘛。
+  if (!fs.existsSync(leveldbDir)) {
+    throw new Error(
+      `找不到微信 Local Storage:${leveldbDir}\n` +
+        `  → 这台机器没装微信 PC Linux 版,或没在微信里打开过滴滴租车小程序。\n` +
+        `  → 本脚本只能读本机微信数据,没有从外部导入登录态的入口。`
+    );
+  }
+
   const snapshot = fs.mkdtempSync(path.join(os.tmpdir(), "didi-rental-session-"));
   fs.cpSync(leveldbDir, snapshot, { recursive: true });
   fs.rmSync(path.join(snapshot, "LOCK"), { force: true });
