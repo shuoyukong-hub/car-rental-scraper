@@ -2,7 +2,7 @@
 
 打开真实 `m.zuche.com` 网页,复用 Chrome 登录态,监听车型接口,把响应存成 JSON 并提取价格为 CSV。
 
-四平台里**唯一需要人工介入**的一个 —— 没有可直接直调的路径(取数必须先登录 + 在页面里选地点)。
+四平台里**唯一需要人工介入**的一个 —— 取数必须先登录,并在页面里选好取车地点。
 
 ## ★ 首次运行必须人工登录
 
@@ -37,10 +37,11 @@ node capture-zuche-prices.js
 
 ## 已确认的接口行为(2026-09-14 实测)
 
-- **实际接口是 `/resource/carrctapi/order/chooseCar/v3`** ——
-  脚本常量 `TARGET_API` 里写的 `/chooseCar/v1` **是过时的**。
-  监听用的是 `url.includes("chooseCar")`,所以 v3 也能抓到,但改协议时别被那个常量误导。
+- **实际接口是 `/resource/carrctapi/order/chooseCar/v3`**。
+  (早期记录写的是 `v1`,已过时;脚本常量 `TARGET_API` 已同步改成 `v3`。
+  主流程靠 `url.includes("chooseCar")` 匹配,版本号变化不影响抓取。)
 - 网关是 `POST https://m.zuche.com/api/gw.do?uri=<接口>`,表单格式 `data=<JSON字符串>`
+  (另有一种 `/api/random/gw.do?v=<时间戳>&uri=<接口>`,脚本的 `--payload` 模式用的是它;两种实测都存在)
 - 登录失效时前端跳 `/#/rlogin`
 
 ### 它的请求体极简,可以直调
@@ -73,6 +74,9 @@ node capture-zuche-prices.js --payload payload.json
 ```
 
 `payload.json` 只放 `data` 里的 JSON 对象,不要包外层 `data=`。
+
+> ⚠️ **这个模式没实测过。** 我们验证过的是「浏览器监听」那条路(靠真人点一次)。
+> 直调要自己搞定来源头(缺了会回 `code:6 请求来源不正确`)和有效 Cookie,请以实测为准。
 
 ## 依赖
 

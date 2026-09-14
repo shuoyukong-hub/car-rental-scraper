@@ -51,7 +51,9 @@ const puppeteer = loadPuppeteer();
 const ROOT = __dirname;
 const OUTPUT_DIR = path.join(ROOT, "output");
 const PROFILE_DIR = path.join(ROOT, ".chrome-profile");
-const TARGET_API = "/resource/carrctapi/order/chooseCar/v1";
+// ★ 实测接口是 v3(v1 是早期记的,已过时)。主流程靠下面的事件监听匹配 url.includes("chooseCar"),
+//   所以常量写错也不影响抓取;但 --payload 直调模式会用这个常量,必须是正确版本。
+const TARGET_API = "/resource/carrctapi/order/chooseCar/v3";
 const PRICE_KEYS = new Set([
   "price",
   "amount",

@@ -140,6 +140,8 @@ cd 神州租车/zuche-price-capture && node capture-zuche-prices.js
 | `--return` | 还车时间 | 距今 3 天 |
 | `--session` | 指定外部会话文件(哈啰 / 滴滴) | — |
 | `--save-session` | 导出会话文件(滴滴) | — |
+| `--max-pages` | 最多翻几页(滴滴全量约 56 页) | 80 |
+| `--output-dir` | 自定义输出目录 | 各平台 `captures/` |
 
 **价格与租期强相关**,建议显式指定取还车时间。
 

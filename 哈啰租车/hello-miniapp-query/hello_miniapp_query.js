@@ -61,7 +61,6 @@ function getArg(name, fallback = "") {
   const idx = process.argv.indexOf(`--${name}`);
   return idx >= 0 && process.argv[idx + 1] !== undefined ? process.argv[idx + 1] : fallback;
 }
-const hasFlag = (name) => process.argv.includes(`--${name}`);
 
 const pad = (n) => String(n).padStart(2, "0");
 function fmtDate(d) {

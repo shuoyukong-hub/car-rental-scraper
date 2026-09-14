@@ -1,7 +1,7 @@
 # 哈啰租车小程序直调(照携程方案)
 
 哈啰租车没有网页版,租车功能只在微信小程序(AppRentCarWechat)里。
-携程走的是「抠登录态 → node 直调后端接口」,本目录复刻同套路。
+携程走的是「抠客户端配置 → node 直调后端接口」,本目录复刻同套路(但哈啰**需要真实 token**,这点不同)。
 
 **状态:2026-09-11 直调已跑通**(HTTP 200 / `code:0` / 武汉汉南机场 31 个车型组)。
 
@@ -12,7 +12,7 @@
 | `hello_miniapp_query.js` | 正式脚本。分页拉全量 → 拍平成 CSV + JSON |
 | `session.json` | 登录态会话(common + account + ssid + enquiryId),脚本默认读它 |
 | `cdp_capture.js` | 连 WMPFDebugger CDP 抓真实请求,**自动落盘并覆盖 `session.json`** |
-| `test_direct.js` | 最早验证跑通的单次回放脚本(参数硬编码),留作兜底参照 |
+| `test_direct.js` | 请求体结构参考样例。**登录态字段已脱敏成占位符,不可直接运行** |
 | `captures/` | 抓包留档(`cdp-*.json`)与脚本产出(`hello-*.csv/json`) |
 
 ## 网关与协议(与携程的关键差异)

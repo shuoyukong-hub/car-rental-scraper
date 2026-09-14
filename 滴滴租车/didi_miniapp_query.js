@@ -82,7 +82,7 @@ async function loadWechatSession(leveldbDir) {
     throw new Error(
       `找不到微信 Local Storage:${leveldbDir}\n` +
         `  → 这台机器没装微信 PC Linux 版,或没在微信里打开过滴滴租车小程序。\n` +
-        `  → 本脚本只能读本机微信数据,没有从外部导入登录态的入口。`
+        `  → 本机没有时,可改用 --session <文件> 从外部会话文件读(见 README)。`
     );
   }
 
