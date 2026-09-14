@@ -9,6 +9,12 @@ node_modules/
 captures/
 output/
 
+# 第三方版权内容 —— 本地保留供逆向参考,但不随仓库分发
+哈啰租车/小程序源码包/
+神州租车/zuche_js/
+携程租车/ctrip_*.xml
+神州租车/zuche_scroll_result*.json
+
 # Python
 __pycache__/
 *.pyc

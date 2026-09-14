@@ -151,16 +151,27 @@ cd 神州租车/zuche-price-capture && node capture-zuche-prices.js
 ├── .gitignore                忽略 依赖 / 登录态 / 缓存
 ├── scripts/                  跨平台通用的小程序逆向工具
 │                              capture_miniapp.sh / extract_apis.py / unpack_wxapkg.py
-├── 携程租车/                  ctrip_miniapp_query.js + README.md + captures/
-├── 哈啰租车/
-│   ├── hello-miniapp-query/  正式脚本 + README.md + cdp_capture.js + captures/
-│   └── 小程序源码包/          4 个 .wxapkg(全部哈啰逆向结论的唯一本地来源)
-├── 滴滴租车/                  didi_miniapp_query.js + README.md + package.json + captures/
+├── 携程租车/                  ctrip_miniapp_query.js + README.md + ctrip_base_request.json
+├── 哈啰租车/hello-miniapp-query/   脚本 + README.md + cdp_capture.js + test_direct.js
+├── 滴滴租车/                  didi_miniapp_query.js + README.md + package.json
 └── 神州租车/
-    ├── zuche-price-capture/  脚本 + README.md + .chrome-profile/ + output/
-    ├── zuche_js/             神州前端 JS(逆向 chooseCar 接口的依据)
-    └── zuche_scroll_*.json   早期滚屏采集到的 77 车数据(北京大兴机场)
+    ├── zuche-price-capture/  capture-zuche-prices.js + README.md(.chrome-profile/ 是登录态,不入库)
+    ├── zuche_cdp_read.py     CDP 读页面
+    └── zuche_scroll_collect.py  滚屏采集
 ```
+
+**只有上面这些进仓库。** 下面这些**只在你本地保留、被 `.gitignore` 挡掉**,因为它们是第三方版权内容或抓取产物,不适合随公开仓库分发:
+
+| 本地目录 | 是什么 | 为什么不入库 |
+|---|---|---|
+| `哈啰租车/小程序源码包/` | 4 个 `.wxapkg` | 哈啰小程序的包文件,版权不归你 |
+| `神州租车/zuche_js/` | 神州前端 JS | 同上 |
+| `携程租车/ctrip_*.xml` | 携程 App 的 UI dump | 同上 |
+| `神州租车/zuche_scroll_result*.json` | 早期采集的 77 车数据 | 抓来的真实业务数据 |
+| 各平台 `captures/`、`output/` | 抓取产物 | 同上,且是一次性文件 |
+| `*.session*.json`、`.chrome-profile/` | 登录凭据 | 泄露等于借出账号 |
+
+> 这些是**逆向的依据**,删了以后要重新搞 —— 所以留在本地。别人 clone 仓库会看到文档里的结论,但拿不到原始素材。
 
 **每个平台目录都有自己的 `README.md`**,协议细节、字段映射、踩过的坑都在那儿 —— `SKILL.md` 只做路由和前置条件。
 
