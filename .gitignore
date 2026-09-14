@@ -1,0 +1,10 @@
+# 依赖(可重装)
+node_modules/
+
+# 登录态 / 凭据 —— 不要提交
+.chrome-profile/
+哈啰租车/hello-miniapp-query/session.json
+
+# Python
+__pycache__/
+*.pyc

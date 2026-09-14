@@ -1,0 +1,26 @@
+{
+  "remote_url": "https://YOUR_CLOUD_DEVICE_APPIUM_URL/wd/hub",
+  "capabilities": {
+    "platformName": "Android",
+    "appium:automationName": "UiAutomator2",
+    "appium:deviceName": "cloud-android",
+    "appium:platformVersion": "",
+    "appium:appPackage": "com.jingyao.easybike",
+    "appium:appActivity": "",
+    "appium:noReset": true,
+    "appium:newCommandTimeout": 300
+  },
+  "probe": {
+    "wait_seconds": 8,
+    "output_dir": "outputs",
+    "keywords": [
+      "租车",
+      "哈啰租车",
+      "取车",
+      "还车",
+      "日均",
+      "总价",
+      "费用明细"
+    ]
+  }
+}
