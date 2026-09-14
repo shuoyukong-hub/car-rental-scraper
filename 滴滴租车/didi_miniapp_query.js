@@ -120,9 +120,50 @@ async function loadWechatSession(leveldbDir) {
     fs.rmSync(snapshot, { recursive: true, force: true });
   }
   if (!values.didih5_trinity_login_ticket || !values.securityParams) {
-    throw new Error("No active Didi rental session found; open the mini program first");
+    throw new Error(
+      "微信里没有滴滴租车的登录票据。\n" +
+        "  → 在那台机器上用微信打开一次「滴滴租车」小程序并搜一次车型,再跑本脚本。"
+    );
   }
   return values;
+}
+
+/**
+ * 从外部会话文件读登录态 —— 让脚本可以跨机器用。
+ * 在装了微信的机器上用 --save-session 导出一份,传到别处用 --session 读进来。
+ */
+function loadSessionFromFile(file) {
+  if (!fs.existsSync(file)) {
+    throw new Error(`找不到会话文件:${file}`);
+  }
+  let session;
+  try {
+    session = JSON.parse(fs.readFileSync(file, "utf8"));
+  } catch (error) {
+    throw new Error(`会话文件不是合法 JSON:${file}(${error.message})`);
+  }
+  if (!session.didih5_trinity_login_ticket || !session.securityParams) {
+    throw new Error(
+      `会话文件里缺字段:${file}\n` +
+        `  → 需要 didih5_trinity_login_ticket 和 securityParams 两个键。`
+    );
+  }
+  console.log(`[session] 用外部会话文件 ${file}`);
+  return session;
+}
+
+/** 把当前登录态导出成会话文件,方便传到别的机器 */
+function saveSessionToFile(file, session) {
+  const out = {
+    _comment:
+      "滴滴租车登录态。含登录票据,别提交到版本库、别随便外传。" +
+      "在别的机器上可用 --session 指向本文件。",
+    _exportedAt: new Date().toISOString(),
+    didih5_trinity_login_ticket: session.didih5_trinity_login_ticket,
+    securityParams: session.securityParams,
+  };
+  fs.writeFileSync(file, JSON.stringify(out, null, 2), { mode: 0o600 });
+  console.log(`[session] 已导出登录态到 ${file}(含凭据,注意保管)`);
 }
 
 /** 距今 N 天的 17:00,格式 "YYYY-MM-DD HH:mm:ss" */
@@ -376,6 +417,8 @@ async function main() {
     pickup: getArg("pickup"),
     returnDate: getArg("return"),
     maxPages: Number(getArg("max-pages", "80")),
+    sessionFile: getArg("session"),
+    saveSession: getArg("save-session"),
     leveldb: path.resolve(getArg("leveldb", DEFAULT_LEVELDB)),
     outputDir: path.resolve(getArg("output-dir", path.join(__dirname, "captures", "didi-direct"))),
   };
@@ -383,7 +426,11 @@ async function main() {
     console.warn(`[warn] --page-size 传了 ${getArg("page-size")},但服务端固定每页 ${PAGE_SIZE} 个车型,该参数无效`);
   }
 
-  const session = await loadWechatSession(args.leveldb);
+  // 会话来源:--session 指定外部文件 > 本机微信 LevelDB
+  const session = args.sessionFile
+    ? loadSessionFromFile(path.resolve(args.sessionFile))
+    : await loadWechatSession(args.leveldb);
+  if (args.saveSession) saveSessionToFile(path.resolve(args.saveSession), session);
   const rental = buildRental(args, session.UT_CAR_RENTAL_INFO);
   const common = commonParams(session);
   const days = rentalDays(rental.pickup.date_time, rental.dropoff.date_time);

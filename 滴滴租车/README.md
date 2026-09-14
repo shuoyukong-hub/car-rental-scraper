@@ -13,9 +13,22 @@
 
 微信正占着这个 DB,脚本会**先拷快照到临时目录、删掉 `LOCK` 再读**,不碰原文件。
 
-> ⚠️ **它不能跨机器用。** 脚本只认本机微信的这个目录,**没有从外部导入登录态的入口**
-> (不像哈啰有 `session.json` 可以传)。换台机器就只能在那台机器上重装微信 + 开一次滴滴租车小程序。
-> 要做成可移植,得给它加一个「读外部会话文件」的选项。
+### 跨机器用:导出/导入会话文件
+
+默认从本机微信读。**要跨机器,就把它导出成文件带过去:**
+
+```bash
+# 在装了微信的机器上导出(文件权限 0600)
+node didi_miniapp_query.js --city 广州 --save-session didi-session.json
+
+# 在另一台机器上用它 —— 完全不需要装微信
+node didi_miniapp_query.js --session didi-session.json --city 广州
+```
+
+会话文件只要两个键:`didih5_trinity_login_ticket` 和 `securityParams`。
+
+> ⚠️ **会话文件含登录票据**,别提交到版本库、别随便外传 —— 给别人等于借出你的滴滴登录态。
+> 也不要放进仓库目录,`.gitignore` 里已经挡了 `*session*.json` 这个模式。
 
 ## 运行
 

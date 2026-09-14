@@ -100,10 +100,19 @@ cd 滴滴租车 && npm install        # 首次要装依赖
 node didi_miniapp_query.js --city 广州
 ```
 
-> ⚠️ **它不能跨机器用** —— 只认本机微信的数据目录,没有从外部导入登录态的入口。
-> 换台机器就在那台机器上重装微信、再开一次小程序。
-
 脚本会先**拷一份 LevelDB 快照到临时目录再读**,不碰微信的原文件。
+
+**【另一条路】跨机器用**,把它导出成会话文件带过去:
+
+```bash
+# 在装了微信的机器上导出
+node didi_miniapp_query.js --city 广州 --save-session didi-session.json
+
+# 另一台机器上直接用它 —— 不需要装微信
+node didi_miniapp_query.js --session didi-session.json --city 广州
+```
+
+> ⚠️ 会话文件含登录票据,别提交、别随便外传。
 
 ### 神州 —— 在弹出的浏览器里登录一次
 

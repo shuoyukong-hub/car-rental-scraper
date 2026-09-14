@@ -3,7 +3,11 @@ node_modules/
 
 # 登录态 / 凭据 —— 不要提交
 .chrome-profile/
-哈啰租车/hello-miniapp-query/session.json
+*session*.json
+
+# 一次性抓取产物(不是 skill 内容,别进版本库)
+captures/
+output/
 
 # Python
 __pycache__/
