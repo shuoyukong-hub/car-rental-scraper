@@ -29,8 +29,8 @@
 ## 安装
 
 ```bash
-git clone https://github.com/shuoyukong-hub/-.git
-cd ./-
+git clone https://github.com/shuoyukong-hub/car-rental-scraper.git
+cd car-rental-scraper
 ```
 
 滴滴额外需要一个 npm 依赖:
